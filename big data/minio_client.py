@@ -11,7 +11,6 @@ spark = SparkSession.builder.appName("Spark") \
     .config("spark.hadoop.fs.s3a.path.style.access", "true") \
     .getOrCreate()
 
-# Chargement du fichier dans un RDD
 file = f"s3a://{bucket_name}/titanic.csv"
 rdd = spark.sparkContext.textFile(file)
 

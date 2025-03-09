@@ -194,49 +194,49 @@
 # query.awaitTermination()
 
 
-# from pyspark.sql import SparkSession
-# from pyspark.sql.functions import (
-#     window, col, count, from_json, to_json, struct, regexp_extract, desc, approx_count_distinct
-# )
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import (
+    window, col, count, from_json, to_json, struct, regexp_extract, desc, approx_count_distinct
+)
 
-# from pyspark.sql.types import StructType, StructField, StringType, TimestampType
+from pyspark.sql.types import StructType, StructField, StringType, TimestampType
 
-# spark = SparkSession.builder \
-#     .appName("AnalyseLogsNginx") \
-#     .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.2") \
-#     .config("spark.ui.port", "4050") \
-#     .getOrCreate()
+spark = SparkSession.builder \
+    .appName("AnalyseLogsNginx") \
+    .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.2") \
+    .config("spark.ui.port", "4050") \
+    .getOrCreate()
 
-# log_schema = StructType([
-#     StructField("@timestamp", TimestampType(), True),
-#     StructField("message", StringType(), True)
-# ])
+log_schema = StructType([
+    StructField("@timestamp", TimestampType(), True),
+    StructField("message", StringType(), True)
+])
 
-# df = spark.readStream \
-#     .format("kafka") \
-#     .option("kafka.bootstrap.servers", "10.136.127.1:9092") \
-#     .option("subscribe", "nginx-logs") \
-#     .option("startingOffsets", "earliest") \
-#     .load()
+df = spark.readStream \
+    .format("kafka") \
+    .option("kafka.bootstrap.servers", "10.136.127.1:9092") \
+    .option("subscribe", "nginx-logs") \
+    .option("startingOffsets", "earliest") \
+    .load()
 
-# parsed_logs = df.select(from_json(col("value").cast("string"), log_schema).alias("data")).select("data.*")
+parsed_logs = df.select(from_json(col("value").cast("string"), log_schema).alias("data")).select("data.*")
 
-# logs_with_ip = parsed_logs.withColumn(
-#     "ip", regexp_extract(col("message"), r"(\d+\.\d+\.\d+\.\d+)", 1)
-# )
+logs_with_ip = parsed_logs.withColumn(
+    "ip", regexp_extract(col("message"), r"(\d+\.\d+\.\d+\.\d+)", 1)
+)
 
-# unique_ips_count = logs_with_ip.groupBy(window(col("@timestamp"), "24 hours")).agg(
-#     approx_count_distinct("ip").alias("unique_ips_count")
-# )
+unique_ips_count = logs_with_ip.groupBy(window(col("@timestamp"), "24 hours")).agg(
+    approx_count_distinct("ip").alias("unique_ips_count")
+)
 
-# unique_ips_json = unique_ips_count.select(to_json(struct(col("window"), col("unique_ips_count"))).alias("value"))
+unique_ips_json = unique_ips_count.select(to_json(struct(col("window"), col("unique_ips_count"))).alias("value"))
 
-# query = unique_ips_json.writeStream \
-#     .format("kafka") \
-#     .option("kafka.bootstrap.servers", "10.136.127.1:9092") \
-#     .option("topic", "21012-question-5") \
-#     .outputMode("complete") \
-#     .option("checkpointLocation", "/tmp/kafka-checkpoints-q5") \
-#     .start()
+query = unique_ips_json.writeStream \
+    .format("kafka") \
+    .option("kafka.bootstrap.servers", "10.136.127.1:9092") \
+    .option("topic", "21012-question-5") \
+    .outputMode("complete") \
+    .option("checkpointLocation", "/tmp/kafka-checkpoints-q5") \
+    .start()
 
-# query.awaitTermination()
+query.awaitTermination()
